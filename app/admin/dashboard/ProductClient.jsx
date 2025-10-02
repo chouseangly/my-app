@@ -2,7 +2,7 @@
 
 "use client"
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import  { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Edit, Trash2, ChevronDown } from 'lucide-react';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';

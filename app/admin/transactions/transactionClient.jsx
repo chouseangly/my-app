@@ -6,7 +6,7 @@ import { Search, ChevronDown, Filter, Upload } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { fetchTransactions, fetchTransactionStatusCounts, updateTransactionStatus } from '@/services/transaction.service';
 import DatePicker from '@/components/ui/DatePicker';
-import TransactionCard from './transactionCard';
+import TransactionCard from './TransactionCard';
 
 const statusOptions = ['All Status', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Pending', 'Picked Up'];
 
