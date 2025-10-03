@@ -11,12 +11,13 @@ function SearchResults() {
   const query = searchParams.get('query');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     if (query) {
       const getProducts = async () => {
         setLoading(true);
-        const fetchedProducts = await searchProducts(query);
+        const fetchedProducts = await searchProducts(query, selectedCategory);
         setProducts(fetchedProducts);
         setLoading(false);
       };
@@ -25,13 +26,39 @@ function SearchResults() {
       setLoading(false);
       setProducts([]);
     }
-  }, [query]);
+  }, [query, selectedCategory]);
+
+  const categories = [
+    { name: 'Women', id: 1 },
+    { name: 'Men', id: 2 },
+    { name: 'Boys', id: 3 },
+    { name: 'Girls', id: 4 },
+  ];
 
   return (
     <div className="w-full mx-auto py-8 px-4 md:px-8">
-      <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-8">
+      <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
         Search Results for "{query}"
       </h1>
+
+      <div className="flex space-x-4 mb-8">
+        <button
+          onClick={() => setSelectedCategory(null)}
+          className={`px-4 py-2 rounded-md ${!selectedCategory ? 'bg-black text-white' : 'bg-gray-200'}`}
+        >
+          All
+        </button>
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            onClick={() => setSelectedCategory(category.id)}
+            className={`px-4 py-2 rounded-md ${selectedCategory === category.id ? 'bg-black text-white' : 'bg-gray-200'}`}
+          >
+            {category.name}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <p className="text-center text-gray-500">Loading products...</p>
       ) : products.length > 0 ? (

@@ -34,7 +34,7 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
                 categoryIds: product.categories.map(c => c.id),
                 variants: product.gallery.map(g => ({
                     ...g,
-                    sizes: Array.isArray(g.sizes) ? g.sizes.join(',') : g.sizes,
+                    sizes: Array.isArray(g.sizes) ? g.sizes.map(s => s.name).join(',') : '',
                     quantity: g.quantity || 0,
                     files: [],
                     previews: g.images
@@ -97,10 +97,10 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
 
         const variantsForApi = formData.variants.map(v => ({
             color: v.color,
-            quantity: v.quantity || 0, // ✅ FIX: Send quantity to backend
-            sizes: Array.isArray(v.sizes) ? v.sizes : (v.sizes ? v.sizes.split(',').map(s => s.trim()).filter(s => s) : []),
-            imageCount: v.files?.length || 0, // Use new files length
-            images: v.previews, 
+            quantity: v.quantity || 0,
+            sizes: v.sizes ? v.sizes.split(',').map(s => s.trim()).filter(s => s) : [],
+            imageCount: v.files?.length || 0,
+            images: v.previews,
         }));
 
         formPayload.append('variants', JSON.stringify(variantsForApi));

@@ -18,9 +18,14 @@ export const fetchAllProducts = async () => {
   }
 };
 
-export const searchProducts = async (name) => {
+export const searchProducts = async (name, categoryId) => {
   try {
-    const response = await fetch(`http://localhost:8080/api/v1/products?name=${encodeURIComponent(name)}`);
+    let url = `http://localhost:8080/api/v1/products?name=${encodeURIComponent(name)}`;
+    if (categoryId) {
+        url += `&categoryId=${categoryId}`;
+    }
+    const response = await fetch(url);
+
 
     if (!response.ok) {
       throw new Error('Network response was not ok');
