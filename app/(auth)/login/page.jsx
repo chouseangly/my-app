@@ -104,9 +104,13 @@ export default function LoginPage() {
             <button type="submit" disabled={loading} className="w-full py-3 bg-black dark:bg-white text-white dark:text-black rounded-md font-semibold hover:bg-gray-800 dark:hover:bg-gray-200 transition disabled:bg-gray-400">
               {loading ? "Logging in..." : "Log In"}
             </button>
+             <Link href="/forgotpassword" className="text-sm  text-gray-600 dark:text-gray-400 hover:underline">
+              Forgot your password?
+            </Link>
           </form>
 
           <div className="flex items-center my-6">
+           
             <hr className="w-full border-gray-300 dark:border-gray-600" />
             <span className="text-gray-400 dark:text-gray-500 text-sm px-4">OR</span>
             <hr className="w-full border-gray-300 dark:border-gray-600" />

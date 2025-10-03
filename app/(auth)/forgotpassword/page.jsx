@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import { FiMail } from "react-icons/fi";
-import Input from "@/components/ui/Input";
+import InputForForgotPassword from "../../../components/ui/inputForForgetPassword";
+import Image from "next/image";
+import Link from "next/link";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -22,6 +24,7 @@ export default function ForgotPassword() {
     }
 
     setLoading(true);
+    const toastId = toast.loading("Sending OTP...");
 
     try {
       const url = `${API_BASE_URL}/auths/forgot-password?email=${encodeURIComponent(email)}`;
@@ -32,77 +35,68 @@ export default function ForgotPassword() {
       const text = await res.text();
 
       if (!res.ok) {
-        // Use the error message from the backend if available
         throw new Error(text || "Failed to send reset email.");
       }
       
-      // Show success toast and redirect
-      toast.success(text || "Password reset email sent successfully!");
+      toast.success(text || "Password reset email sent successfully!", { id: toastId });
       router.push(`/verify-forgotpassword?email=${encodeURIComponent(email)}`);
 
     } catch (error) {
-      toast.error(error.message || "Something went wrong. Please try again.");
+      toast.error(error.message || "Something went wrong. Please try again.", { id: toastId });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col lg:flex-row items-center justify-center px-4 md:px-12 lg:px-[170px] py-10">
-      {/* Add the Toaster component here to render notifications */}
-      <Toaster position="bottom-right" reverseOrder={false} />
+    <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <Toaster position="bottom-right" />
+      <div className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-lg flex overflow-hidden">
+        <div className="w-full lg:w-1/2 p-8 md:p-12">
+            <div className="flex justify-center mb-6">
+              <Link href="/">
+                <Image src="/logo.png" alt="Zando Logo" width={150} height={50} />
+              </Link>
+            </div>
+            <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-200 mb-2">Forgot Your Password?</h2>
+            <p className="text-center text-gray-500 dark:text-gray-400 mb-8">
+              Enter your email and we'll send you a code to reset your password.
+            </p>
 
-      {/* Left Illustration */}
-      <div className="hidden lg:flex w-1/2 justify-between">
-        <img
-          src="/images/auth/forgotpassword.jpg"
-          alt="Forgot password illustration"
-          className="max-w-[430px] h-auto"
-        />
-      </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="relative">
+                <FiMail className="absolute left-3 top-10 text-gray-400" />
+                <InputForForgotPassword
+                  label="Email"
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10" // Add padding for the icon
+                />
+              </div>
 
-      {/* Right Form */}
-      <div className="w-full lg:w-1/2 max-w-md space-y-6">
-        <div className="flex justify-center mb-12">
-          <img src="/images/auth/logo1.png" alt="logo" className="w-[130px]" />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-black dark:bg-white text-white dark:text-black rounded-md font-semibold hover:bg-gray-800 dark:hover:bg-gray-200 transition disabled:bg-gray-400"
+              >
+                {loading ? "Sending..." : "Send Code"}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+              Remember your password?{" "}
+              <Link href="/login" className="text-black dark:text-white font-semibold hover:underline">
+                Log in
+              </Link>
+            </p>
         </div>
-
-        <div className="text-center lg:text-left">
-          <h1 className="text-xl font-semibold text-gray-900">Forgot Password</h1>
-          <p className="text-sm text-gray-600 mt-2">
-            Enter your email for the verification process. We will send a 6-digit code to your email.
-          </p>
+        <div className="hidden lg:block w-1/2 relative">
+            <Image src="/ban1.jpg" alt="Fashion model" layout="fill" objectFit="cover" />
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Input
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <FiMail className="absolute right-4 top-[38px] text-gray-400 text-lg" />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full p-3 bg-orange-500 text-white rounded-full font-semibold hover:bg-orange-600 transition disabled:opacity-50"
-          >
-            {loading ? "Sending..." : "Continue"}
-          </button>
-        </form>
-
-        <p className="text-sm text-center text-gray-600">
-          Already remember your password?{" "}
-          <a href="/login" className="text-orange-500 font-medium hover:underline">
-            Log in
-          </a>
-        </p>
       </div>
     </div>
   );

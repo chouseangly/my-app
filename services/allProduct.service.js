@@ -17,3 +17,20 @@ export const fetchAllProducts = async () => {
     return []; // Return an empty array on error to prevent crashes
   }
 };
+
+export const searchProducts = async (name) => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/v1/products?name=${encodeURIComponent(name)}`);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const apiResponse = await response.json();
+    return apiResponse.payload;
+
+  } catch (error) {
+    console.error(`Failed to search for products with name ${name}:`, error);
+    return [];
+  }
+};
