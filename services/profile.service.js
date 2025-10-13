@@ -1,3 +1,4 @@
+// chouseangly/my-app/my-app-main/services/profile.service.js
 import { getSession } from "next-auth/react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
@@ -52,6 +53,36 @@ export const updateUserProfile = async (userId, profileData) => {
         return apiResponse.payload;
     } catch (error) {
         console.error("Error updating user profile:", error);
+        return null;
+    }
+};
+
+// **NEW FUNCTION**
+export const updateUserPassword = async (userId, oldPassword, newPassword, confirmPassword) => {
+    const session = await getSession();
+    if (!session?.user?.token) {
+        console.error("Authentication token not found.");
+        return null;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/auths/change-password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.user.token}`
+            },
+            body: JSON.stringify({ userId, oldPassword, newPassword, confirmPassword })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update password.');
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Error updating password:", error);
         return null;
     }
 };

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, UploadCloud } from 'lucide-react';
-import { fetchCategories } from '@/services/category.service';
+import { fetchCategories } from '../../../services/category.service';
 import { useSession } from "next-auth/react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -24,14 +24,43 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
     }, [isOpen]);
 
     useEffect(() => {
-        if (product) {
+        if (product && allCategories.length > 0) {
+            const categoryIds = product.categories.map(c => c.id);
+            let mostSpecificId = null;
+
+            if (categoryIds.length > 0) {
+                const categoryIdSet = new Set(categoryIds);
+                const findMostSpecific = (categories) => {
+                    for (const cat of categories) {
+                        const hasSelectedChildren = cat.children?.some(child => categoryIdSet.has(child.id));
+                        if (categoryIdSet.has(cat.id) && !hasSelectedChildren) {
+                            return cat.id;
+                        }
+                        if (cat.children) {
+                            const foundId = findMostSpecific(cat.children);
+                            if (foundId) return foundId;
+                        }
+                    }
+                    return null;
+                };
+
+                // Find the most specific subcategory ID from the product's categories
+                for (const mainCat of allCategories) {
+                    const foundId = findMostSpecific(mainCat.children || []);
+                    if (foundId) {
+                        mostSpecificId = foundId;
+                        break;
+                    }
+                }
+            }
+            
             setFormData({
                 name: product.name || '',
                 description: product.description || '',
                 basePrice: product.originalPrice || '',
                 discountPercent: product.discount || 0,
                 isAvailable: product.isAvailable,
-                categoryIds: product.categories.map(c => c.id),
+                categoryId: mostSpecificId,
                 variants: product.gallery.map(g => ({
                     ...g,
                     sizes: Array.isArray(g.sizes) ? g.sizes.map(s => s.name).join(',') : '',
@@ -41,7 +70,7 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
                 })) || []
             });
         }
-    }, [product]);
+    }, [product, allCategories, isOpen]);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -49,12 +78,7 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
     };
 
     const handleCategoryChange = (categoryId) => {
-        setFormData(prev => {
-            const newCategoryIds = prev.categoryIds.includes(categoryId)
-                ? prev.categoryIds.filter(id => id !== categoryId)
-                : [...prev.categoryIds, categoryId];
-            return { ...prev, categoryIds: newCategoryIds };
-        });
+        setFormData(prev => ({ ...prev, categoryId: categoryId }));
     };
 
     const handleVariantChange = (index, field, value) => {
@@ -88,6 +112,24 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
         e.preventDefault();
         setIsLoading(true);
 
+        const allCategoryIdsToSend = new Set();
+        if (formData.categoryId) {
+            allCategoryIdsToSend.add(formData.categoryId);
+            const findAndAddParents = (catId, allCats) => {
+                for (const cat of allCats) {
+                    if (cat.children?.some(child => child.id === catId)) {
+                        allCategoryIdsToSend.add(cat.id);
+                        findAndAddParents(cat.id, allCategories);
+                        return;
+                    }
+                    if (cat.children) {
+                        findAndAddParents(catId, cat.children);
+                    }
+                }
+            };
+            findAndAddParents(formData.categoryId, allCategories);
+        }
+
         const formPayload = new FormData();
         formPayload.append('name', formData.name);
         formPayload.append('description', formData.description);
@@ -104,7 +146,7 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
         }));
 
         formPayload.append('variants', JSON.stringify(variantsForApi));
-        formData.categoryIds.forEach(id => formPayload.append('categoryIds', id));
+        allCategoryIdsToSend.forEach(id => formPayload.append('categoryIds', id));
         formData.variants.forEach(variant => {
             if (variant.files) {
                 variant.files.forEach(file => {
@@ -144,7 +186,7 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
     if (!isOpen || !formData) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-transparent flex justify-center items-center z-50 p-4">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-4xl text-gray-800 dark:text-gray-200">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-bold">Edit Product</h2>
@@ -167,7 +209,7 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
                     </div>
 
                     <div>
-                        <label className="block font-medium mb-2">Categories</label>
+                        <label className="block font-medium mb-2">Category</label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border p-4 rounded-md max-h-60 overflow-y-auto bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
                            {allCategories.map(mainCat => (
                                 <div key={mainCat.id}>
@@ -179,9 +221,10 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
                                                 {subCat.children.map(childCat => (
                                                     <label key={childCat.id} className="flex items-center text-sm">
                                                         <input
-                                                            type="checkbox"
+                                                            type="radio"
+                                                            name="category"
                                                             value={childCat.id}
-                                                            checked={formData.categoryIds.includes(childCat.id)}
+                                                            checked={formData.categoryId === childCat.id}
                                                             onChange={() => handleCategoryChange(childCat.id)}
                                                             className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
                                                         />
@@ -244,3 +287,4 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
 };
 
 export default EditProductModal;
+

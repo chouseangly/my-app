@@ -14,7 +14,7 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
         basePrice: '',
         discountPercent: '',
         isAvailable: true,
-        categoryIds: [],
+        categoryId: null, // Use a single ID for the selected category
         variants: [{ color: '', sizes: '', quantity: 0, imageCount: 0, files: [], previews: [] }]
     });
     const [allCategories, setAllCategories] = useState([]);
@@ -35,13 +35,9 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
     
+    // Updated to handle a single category selection
     const handleCategoryChange = (categoryId) => {
-        setFormData(prev => {
-            const newCategoryIds = prev.categoryIds.includes(categoryId)
-                ? prev.categoryIds.filter(id => id !== categoryId)
-                : [...prev.categoryIds, categoryId];
-            return { ...prev, categoryIds: newCategoryIds };
-        });
+        setFormData(prev => ({ ...prev, categoryId: categoryId }));
     };
 
     const handleVariantChange = (index, field, value) => {
@@ -73,7 +69,28 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        
+
+        // --- Logic to find all parent categories ---
+        const allCategoryIdsToSend = new Set();
+        if (formData.categoryId) {
+            allCategoryIdsToSend.add(formData.categoryId);
+
+            const findAndAddParents = (catId, allCats) => {
+                for (const cat of allCats) {
+                    if (cat.children?.some(child => child.id === catId)) {
+                        allCategoryIdsToSend.add(cat.id);
+                        findAndAddParents(cat.id, allCategories); // Recurse from the top
+                        return;
+                    }
+                    if (cat.children) {
+                        findAndAddParents(catId, cat.children);
+                    }
+                }
+            };
+            findAndAddParents(formData.categoryId, allCategories);
+        }
+        // --- End of parent category logic ---
+
         const formPayload = new FormData();
         formPayload.append('name', formData.name);
         formPayload.append('description', formData.description);
@@ -85,11 +102,13 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
             color: v.color,
             quantity: v.quantity || 0,
             sizes: v.sizes ? v.sizes.split(',').map(s => s.trim()).filter(s => s) : [],
-            imageCount: v.files.length 
+            imageCount: v.files.length
         }));
         formPayload.append('variants', JSON.stringify(variantsForApi));
         
-        formData.categoryIds.forEach(id => formPayload.append('categoryIds', id));
+        // Append all relevant category IDs
+        allCategoryIdsToSend.forEach(id => formPayload.append('categoryIds', id));
+
         formData.variants.forEach(variant => {
             variant.files.forEach(file => {
                 formPayload.append('images', file);
@@ -127,7 +146,7 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-transparent flex justify-center items-center z-50 p-4">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-4xl text-gray-800 dark:text-gray-200">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-bold">Add New Product</h2>
@@ -142,7 +161,7 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
                     </div>
 
                     <div>
-                        <label className="block font-medium mb-2">Categories</label>
+                        <label className="block font-medium mb-2">Category</label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border p-4 rounded-md max-h-60 overflow-y-auto bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
                             {allCategories.map(mainCat => (
                                 <div key={mainCat.id}>
@@ -152,13 +171,14 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
                                             <h5 className="font-semibold text-red-600 uppercase text-sm tracking-wider mb-2">{subCat.name}</h5>
                                             <div className="space-y-2 pl-2">
                                                 {subCat.children.map(childCat => (
-                                                    <label key={childCat.id} className="flex items-center text-sm">
+                                                    <label key={childCat.id} className="flex items-center text-sm cursor-pointer">
                                                         <input
-                                                            type="checkbox"
+                                                            type="radio"
+                                                            name="category" // Same name for all radio buttons
                                                             value={childCat.id}
-                                                            checked={formData.categoryIds.includes(childCat.id)}
+                                                            checked={formData.categoryId === childCat.id}
                                                             onChange={() => handleCategoryChange(childCat.id)}
-                                                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                                                            className="h-4 w-4 border-gray-300 text-black focus:ring-black"
                                                         />
                                                         <span className="ml-2 text-gray-600 dark:text-gray-300">{childCat.name}</span>
                                                     </label>

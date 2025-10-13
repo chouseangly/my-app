@@ -1,3 +1,5 @@
+// chouseangly/my-app/my-app-main/app/(main)/checkout/CheckoutClient.jsx
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -11,6 +13,7 @@ import PaymentOptions from './PaymentOptions';
 import OrderTotals from './OrderTotals';
 import { fetchUserProfile } from '@/services/profile.service';
 import QRCodeModal from './QRCodeModal'; // Import the new modal component
+import { Gift } from 'lucide-react'; // Import Gift icon
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -28,6 +31,9 @@ const CheckoutClient = () => {
     const [contactMethod, setContactMethod] = useState('Phone call');
     const [isLoading, setIsLoading] = useState(false);
     const [isModalOpen, setModalOpen] = useState(false); // State to control modal visibility
+    // **NEW STATE FOR GIFT CARD**
+    const [giftCode, setGiftCode] = useState('');
+    const [giftDiscount, setGiftDiscount] = useState(0);
 
     useEffect(() => {
         if (status === 'authenticated' && session?.user?.id) {
@@ -58,7 +64,8 @@ const CheckoutClient = () => {
         return acc + (original - item.product.price) * item.quantity;
     }, 0);
     const deliveryFee = 1.0;
-    const amountToPay = subtotal + deliveryFee;
+    // **UPDATE: Apply Gift Discount to Amount to Pay**
+    const amountToPay = Math.max(0, subtotal + deliveryFee - giftDiscount);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -69,6 +76,19 @@ const CheckoutClient = () => {
         }
     }, [status, cartProducts, router]);
 
+    // **NEW LOGIC: Apply Gift Code**
+    const applyGiftCode = () => {
+        if (giftCode.toUpperCase() === 'GIFT20') {
+            // Placeholder logic: Apply 20% discount on subtotal
+            const discountAmount = Math.round(subtotal * 0.2 * 100) / 100; 
+            setGiftDiscount(discountAmount);
+            toast.success(`Gift Code applied! $${discountAmount.toFixed(2)} discount added. (Simulated)`);
+        } else {
+            setGiftDiscount(0);
+            toast.error('Invalid Gift Code. Please try again.');
+        }
+    };
+    
     const handleConfirmPayment = async () => {
         setIsLoading(true);
         const toastId = toast.loading('Placing your order...');
@@ -80,7 +100,9 @@ const CheckoutClient = () => {
             items: cartItems.map(item => ({
                 productId: item.productId,
                 quantity: item.quantity
-            }))
+            })),
+            // **New Field for Gift/Coupon (for backend)**
+            discountApplied: giftDiscount, 
         };
 
         try {
@@ -134,6 +156,39 @@ const CheckoutClient = () => {
                             address={deliveryAddress}
                             setAddress={setDeliveryAddress}
                         />
+
+                        {/* **NEW GIFT CARD INPUT SECTION** */}
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border dark:border-gray-700 my-6">
+                            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                <Gift size={20} /> Gift Card / Promo Code
+                            </h3>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={giftCode}
+                                    onChange={(e) => setGiftCode(e.target.value)}
+                                    placeholder="Enter gift or promo code"
+                                    className="flex-1 p-3 border rounded-md bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={applyGiftCode}
+                                    disabled={!giftCode.trim()}
+                                    className="px-6 py-3 bg-black text-white rounded-md font-semibold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition disabled:bg-gray-400 disabled:text-gray-600"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                            {giftDiscount > 0 ? (
+                                <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+                                    Code applied. Discount: -${giftDiscount.toFixed(2)}
+                                </p>
+                            ) : (
+                                giftCode.trim() && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Try code: GIFT20</p>
+                            )}
+                        </div>
+                        {/* **END NEW GIFT CARD INPUT SECTION** */}
+
                         <ShoppingBagSummary items={cartProducts} />
                     </div>
 
@@ -158,6 +213,8 @@ const CheckoutClient = () => {
                             totalSave={totalSave} 
                             deliveryFee={deliveryFee} 
                             amountToPay={amountToPay}
+                            // **NEW PROP**
+                            giftDiscount={giftDiscount} 
                         />
                         <button 
                             onClick={handleCheckoutClick}

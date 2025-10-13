@@ -86,6 +86,37 @@ export async function fetchTransactions(filters = {}) {
 }
 
 /**
+ * Fetches all transactions for a specific user.
+ */
+export async function fetchTransactionsByUserId(userId) {
+    const session = await getSession();
+    if (!session?.user?.token) {
+        console.error("Authentication token not found.");
+        return [];
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/transactions/user/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${session.user.token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const apiResponse = await response.json();
+        return apiResponse.payload || [];
+
+    } catch (error) {
+        console.error(`Failed to fetch transactions for user ${userId}:`, error);
+        return [];
+    }
+}
+
+
+/**
  * Fetches all transactions and calculates the count for each status tab.
  */
 export async function fetchTransactionStatusCounts() {

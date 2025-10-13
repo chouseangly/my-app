@@ -1,9 +1,8 @@
-// chouseangly/zandoapp/zandoApp-main/src/app/admin/dashboard/ProductClient.jsx
-
 "use client"
 
-import  { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Edit, Trash2, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
@@ -59,6 +58,22 @@ const ProductClient = ({ searchQuery, selectedCategory }) => {
     const handleDelete = (product) => {
         setSelectedProduct(product);
         setDeleteModalOpen(true);
+    };
+
+    // --- Handlers to show pop-up notifications ---
+    const handleProductAdded = () => {
+        loadProducts();
+        toast.success('Product added successfully!');
+    };
+
+    const handleProductUpdated = () => {
+        loadProducts();
+        toast.success('Product updated successfully!');
+    };
+
+    const handleProductDeleted = () => {
+        loadProducts();
+        toast.success('Product deleted successfully!');
     };
 
     if (loading) {
@@ -124,19 +139,19 @@ const ProductClient = ({ searchQuery, selectedCategory }) => {
             <AddProductModal 
                 isOpen={isAddModalOpen} 
                 onClose={() => setAddModalOpen(false)}
-                onProductAdded={loadProducts}
+                onProductAdded={handleProductAdded}
             />
             {selectedProduct && <EditProductModal 
                 isOpen={isEditModalOpen} 
                 onClose={() => setEditModalOpen(false)} 
                 product={selectedProduct} 
-                onProductUpdated={loadProducts}
+                onProductUpdated={handleProductUpdated}
             />}
             {selectedProduct && <DeleteConfirmationModal 
                 isOpen={isDeleteModalOpen} 
                 onClose={() => setDeleteModalOpen(false)} 
                 product={selectedProduct} 
-                onProductDeleted={loadProducts}
+                onProductDeleted={handleProductDeleted}
             />}
         </>
     );

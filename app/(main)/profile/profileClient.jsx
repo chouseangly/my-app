@@ -1,3 +1,4 @@
+// chouseangly/my-app/my-app-main/app/(main)/profile/profileClient.jsx
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
@@ -9,6 +10,11 @@ import { translations } from "@/lib/translations";
 import { fetchUserProfile, updateUserProfile } from "@/services/profile.service";
 import toast from 'react-hot-toast';
 import { useTheme } from "next-themes";
+// **NEW IMPORTS**
+import MyOrdersPage from "./MyOrdersPage";
+import AddressBook from "./AddressBook";
+import ChangePassword from "./ChangePassword";
+import GiftCardPage from "./GiftCardPage"; // **NEW: Import GiftCardPage**
 
 const ProfileClient = () => {
   const { data: session, status, update } = useSession();
@@ -109,11 +115,94 @@ const ProfileClient = () => {
     </button>
   );
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+        case 'profile':
+            return (
+                <div>
+                    <h2 className="text-2xl font-bold mb-6">{t.profile}</h2>
+                    <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-full lg:max-w-2xl bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <div className="flex items-center gap-4">
+                            <img
+                                src={previewImage || `https://ui-avatars.com/api/?name=${formData.firstName}+${formData.lastName}&background=random`}
+                                alt="Profile"
+                                className="w-24 h-24 rounded-full object-cover"
+                            />
+                            <label className="cursor-pointer bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                Change Photo
+                                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                            </label>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2">{t.gender}</label>
+                            <div className="flex items-center gap-6">
+                                <label className="flex items-center"><input type="radio" name="gender" value="Male" checked={formData.gender === 'Male'} onChange={handleInputChange} className="h-4 w-4" /> <span className="ml-2">{t.male}</span></label>
+                                <label className="flex items-center"><input type="radio" name="gender" value="Female" checked={formData.gender === 'Female'} onChange={handleInputChange} className="h-4 w-4" /> <span className="ml-2">{t.female}</span></label>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium">{t.firstName}</label>
+                                <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white dark:bg-gray-700 dark:border-gray-600" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium">{t.lastName}</label>
+                                <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white dark:bg-gray-700 dark:border-gray-600" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">{t.email}</label>
+                            <input type="email" name="email" value={formData.email} disabled className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-200 dark:bg-gray-600 cursor-not-allowed" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">{t.mobileNumber}</label>
+                            <input type="tel" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white dark:bg-gray-700 dark:border-gray-600" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">{t.dob}</label>
+                            <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white dark:bg-gray-700 dark:border-gray-600" />
+                            <p className="mt-2 text-sm text-green-600">{t.dobReward}</p>
+                        </div>
+                        <button type="submit" className="w-full sm:w-auto px-10 py-3 bg-black text-white font-semibold rounded-md hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600">{t.update}</button>
+                    </form>
+                </div>
+            );
+        case 'orders':
+            return (
+                <div>
+                    <h2 className="text-2xl font-bold mb-6">{t.myOrders}</h2>
+                    <MyOrdersPage />
+                </div>
+            );
+        case 'giftcard': // **Render the new component**
+            return (
+                <GiftCardPage />
+            );
+        case 'address':
+             return (
+                <div>
+                    <h2 className="text-2xl font-bold mb-6">{t.addressBook}</h2>
+                    <AddressBook />
+                </div>
+            );
+        case 'password':
+            return (
+                <div>
+                    <h2 className="text-2xl font-bold mb-6">{t.changePassword}</h2>
+                    <ChangePassword />
+                </div>
+            );
+        default:
+            return null;
+    }
+  };
+
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex flex-col md:flex-row gap-10 lg:gap-16">
-        <aside className="w-full md:w-1/4 lg:w-1/5">
-          <div className="space-y-4">
+        <aside className="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
+          <div className="space-y-4 md:sticky md:top-4">
             <div>
               <h3 className="font-bold text-lg mb-2">{t.loyaltyMember}</h3>
               <SidebarLink name={t.membershipBenefits} tabName="membership" />
@@ -154,56 +243,8 @@ const ProfileClient = () => {
           </div>
         </aside>
 
-        <main className="w-full md:w-3/4 lg:w-4/5">
-          {activeTab === 'profile' && (
-            <div>
-              <h2 className="text-2xl font-bold mb-6">{t.profile}</h2>
-              <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-2xl bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={previewImage || `https://ui-avatars.com/api/?name=${formData.firstName}+${formData.lastName}&background=random`}
-                    alt="Profile"
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
-                  <label className="cursor-pointer bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
-                    Change Photo
-                    <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                  </label>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">{t.gender}</label>
-                  <div className="flex items-center gap-6">
-                    <label className="flex items-center"><input type="radio" name="gender" value="Male" checked={formData.gender === 'Male'} onChange={handleInputChange} className="h-4 w-4" /> <span className="ml-2">{t.male}</span></label>
-                    <label className="flex items-center"><input type="radio" name="gender" value="Female" checked={formData.gender === 'Female'} onChange={handleInputChange} className="h-4 w-4" /> <span className="ml-2">{t.female}</span></label>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium">{t.firstName}</label>
-                    <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white dark:bg-gray-700 dark:border-gray-600" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">{t.lastName}</label>
-                    <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white dark:bg-gray-700 dark:border-gray-600" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">{t.email}</label>
-                  <input type="email" name="email" value={formData.email} disabled className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-200 dark:bg-gray-600 cursor-not-allowed" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">{t.mobileNumber}</label>
-                  <input type="tel" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white dark:bg-gray-700 dark:border-gray-600" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">{t.dob}</label>
-                  <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white dark:bg-gray-700 dark:border-gray-600" />
-                  <p className="mt-2 text-sm text-green-600">{t.dobReward}</p>
-                </div>
-                <button type="submit" className="w-full sm:w-auto px-10 py-3 bg-black text-white font-semibold rounded-md hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600">{t.update}</button>
-              </form>
-            </div>
-          )}
+        <main className="w-full md:w-3/4 lg:w-4/5 min-h-[60vh]">
+          {renderTabContent()}
         </main>
       </div>
     </div>
